@@ -1,0 +1,50 @@
+%% Langkah-langkah proses APSS (Aplikasi Pengaduan Sarana Sekolah)
+%% Buka di VSCode dengan ekstensi Mermaid atau di https://mermaid.live
+
+flowchart TB
+  Start([Mulai])
+  Start --> A["1. Landing & Akses Publik\n(splash.php, index.php)"]
+  A --> B["2. Login / Daftar\n(login.php, daftar.php)"]
+
+  B --> AuthCheck{"3. Validasi Akun"}
+  AuthCheck -->|Gagal| A
+  AuthCheck -->|Siswa| SiswaStart
+  AuthCheck -->|Admin| AdminStart
+
+  subgraph SiswaFlow [Alur Pengguna Siswa]
+    SiswaStart["4. Siswa Dashboard\n(siswa/index.php)"]
+    SiswaStart --> Input["5. Isi Form Aspirasi\n(siswa/input_aspirasi.php)"]
+    Input --> Validate["6. Validasi Input (lokasi, ket, kategori)"]
+    Validate --> Upload["7. Proses Upload Foto (opsional)\n-validasi tipe & ukuran\n-simpan ke uploads/bukti/"]
+    Upload --> DBInsert1["8. Simpan ke DB: input_aspirasi\n(prepared statement, kolom foto opsional)"]
+    DBInsert1 --> DBInsert2["9. Buat entri aspirasi awal: aspirasi(status='Menunggu')"]
+    DBInsert2 --> SiswaEnd["10. Tampilkan pesan sukses / redirect ke histori"]
+  end
+
+  subgraph AdminFlow [Alur Admin]
+    AdminStart["4. Admin Dashboard\n(admin/index.php)"]
+    AdminStart --> AspList["5. Lihat Daftar Aspirasi\n(admin/aspirasi.php)"]
+    AspList --> AspDetail["6. Buka Detail & Tanggapan\n(admin/detail.php)"]
+    AspDetail --> UpdateStatus["7. Update Status / Tambah Feedback\n(UPDATE ke tabel aspirasi)"]
+    UpdateStatus --> Notify["8. (Opsional) Notifikasi / tampilan histori siswa"]
+    Notify --> AdminEnd["9. Kembali ke Dashboard"]
+  end
+
+  %% Common utilities
+  Start --> Config["Config & Koneksi DB\n(config/config.php, .env)"]
+  Config --> AutoSetup["Auto-setup DB (runtime checks)\n(tambah kolom foto jika perlu)"]
+  AutoSetup --> SiswaFlow
+  AutoSetup --> AdminFlow
+
+  %% Logout
+  SiswaEnd --> Logout["Logout (redirect ke splash)"]
+  AdminEnd --> Logout
+  Logout --> A
+
+  %% Notes
+  classDef note fill:#fff3cd,stroke:#f0ad4e,stroke-width:1px;
+  Note1["Catatan: Gunakan prepared statements untuk semua INSERT/UPDATE\nPeriksa hak akses di setiap halaman (require_login, is_admin, is_siswa)"]:::note
+  Note1 --> Config
+
+  %% Order labels (nomor langkah)
+  class Start,A,B,AuthCheck,SiswaStart,Input,Validate,Upload,DBInsert1,DBInsert2,SiswaEnd,AdminStart,AspList,AspDetail,UpdateStatus,Notify,AdminEnd,Config,AutoSetup,Logout note;

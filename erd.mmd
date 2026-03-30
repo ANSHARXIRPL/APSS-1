@@ -1,0 +1,46 @@
+%% ERD untuk APSS (Aplikasi Pengaduan Sarana Sekolah)
+%% Buka di https://mermaid.live atau VSCode dengan plugin Mermaid
+
+erDiagram
+    ADMIN {
+        VARCHAR username PK "username"
+        VARCHAR password "password"
+    }
+
+    SISWA {
+        VARCHAR nis PK "nis"
+        VARCHAR kelas "kelas"
+    }
+
+    KATEGORI {
+        INT id_kategori PK "id_kategori"
+        VARCHAR ket_kategori "ket_kategori"
+    }
+
+    INPUT_ASPIRASI {
+        INT id_pelaporan PK "id_pelaporan"
+        VARCHAR nis FK "nis"
+        INT id_kategori FK "id_kategori"
+        VARCHAR lokasi "lokasi"
+        TEXT ket "keterangan"
+        VARCHAR foto "foto (opsional)"
+        TIMESTAMP created_at "created_at"
+    }
+
+    ASPIRASI {
+        INT id_aspirasi PK FK "id_aspirasi (FK -> input_aspirasi.id_pelaporan)"
+        ENUM status "status (Menunggu/Proses/Selesai)"
+        INT id_kategori FK "id_kategori"
+        TEXT feedback "feedback"
+        TIMESTAMP updated_at "updated_at"
+    }
+
+    %% Relasi
+    SISWA ||--o{ INPUT_ASPIRASI : "mengajukan"
+    KATEGORI ||--o{ INPUT_ASPIRASI : "mengelompokkan"
+    INPUT_ASPIRASI ||--|| ASPIRASI : "memiliki"
+    KATEGORI ||--o{ ASPIRASI : "kategori"
+
+    %% Catatan
+    %% - Tabel admin berdiri sendiri (pengelolaan aplikasi)
+    %% - Kolom `foto` ditambahkan runtime jika diperlukan (lihat setup_foto)

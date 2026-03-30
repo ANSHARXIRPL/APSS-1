@@ -1,0 +1,67 @@
+%% Flowchart untuk APSS (Aplikasi Pengaduan Sarana Sekolah)
+%% Buka di VSCode dengan ekstensi Mermaid atau https://mermaid.live untuk melihat grafik
+
+flowchart LR
+  subgraph Public
+    SPLASH["Splash / Landing\n(splash.php)"]
+    INDEX["Public Home\n(index.php)"]
+    LOGIN["Login\n(login.php)"]
+    DAFTAR["Daftar / Register\n(daftar.php)"]
+  end
+
+  subgraph Auth[Autentikasi]
+    LOGIN -->|success: siswa| S_DASH
+    LOGIN -->|success: admin| A_DASH
+    LOGIN -->|fail| LOGIN
+    DAFTAR --> LOGIN
+  end
+
+  subgraph Siswa[Area Siswa]
+    S_DASH["Siswa Dashboard\n(siswa/index.php)"]
+    INPUT["Input Aspirasi\n(siswa/input_aspirasi.php)"]
+    HISTORI["Histori Aspirasi\n(siswa/histori.php)"]
+    DETAIL_S["Detail Aspirasi\n(siswa/detail.php)"]
+    INPUT --> VALID["Validasi Form & Upload Foto"]
+    VALID --> UPLOAD["Simpan file ke uploads/bukti/"]
+    VALID --> DB1["INSERT -> input_aspirasi (nis,id_kategori,lokasi,ket,foto?)"]
+    DB1 --> DB2["INSERT -> aspirasi (id_aspirasi,status='Menunggu', id_kategori)"]
+    S_DASH --> INPUT
+    S_DASH --> HISTORI
+    HISTORI --> DETAIL_S
+  end
+
+  subgraph Admin[Area Admin]
+    A_DASH["Admin Dashboard\n(admin/index.php)"]
+    ASP_LIST["Daftar Aspirasi\n(admin/aspirasi.php)"]
+    ASP_DETAIL["Detail Aspirasi & Tanggapan\n(admin/detail.php)"]
+    KEL_ADMIN["Kelola Admin\n(admin/kelola_admin.php)"]
+    TAMBAH_ADMIN["Tambah Admin\n(admin/tambah_admin.php)"]
+    A_DASH --> ASP_LIST
+    ASP_LIST --> ASP_DETAIL
+    A_DASH --> KEL_ADMIN
+    KEL_ADMIN --> TAMBAH_ADMIN
+  end
+
+  subgraph Common[Komponen Bersama]
+    CONFIG["Config & DB koneksi\n(config/config.php, .env)"]
+    LAYOUT["Layout header/footer\n(layout/header.php, layout/footer.php)"]
+    UPLOADS["Folder uploads/bukti/"]
+    CONFIG -.-> Public
+    CONFIG -.-> Auth
+    CONFIG -.-> Siswa
+    CONFIG -.-> Admin
+    LAYOUT --> Public
+    LAYOUT --> Siswa
+    LAYOUT --> Admin
+    UPLOADS -->|file path saved| DB1
+  end
+
+  %% Logout
+  LOGIN -->|logout| SPLASH
+  A_DASH -->|logout| SPLASH
+  S_DASH -->|logout| SPLASH
+
+  %% Notes
+  classDef note fill:#f9f,stroke:#333,stroke-width:1px;
+  NOTE["Auto-setup DB (e.g. tambah kolom foto)\n(config/setup_foto.php / runtime checks)"]:::note
+  NOTE --> DB1
